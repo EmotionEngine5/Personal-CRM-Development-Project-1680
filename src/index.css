@@ -1,0 +1,226 @@
+/* 공통 스타일 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 구글 캘린더 스타일 */
+.google-calendar-style {
+  --fc-border-color: #e5e7eb;
+  --fc-button-text-color: #4285F4;
+  --fc-button-bg-color: #ffffff;
+  --fc-button-border-color: #e5e7eb;
+  --fc-button-hover-bg-color: #f3f4f6;
+  --fc-button-hover-border-color: #d1d5db;
+  --fc-button-active-bg-color: #ecf3fe;
+  --fc-button-active-border-color: #4285F4;
+  
+  --fc-event-bg-color: #4285F4;
+  --fc-event-border-color: #4285F4;
+  --fc-event-text-color: #fff;
+  --fc-event-selected-overlay-color: rgba(0, 0, 0, 0.25);
+  
+  --fc-today-bg-color: #ecf3fe;
+  --fc-now-indicator-color: #ea4335;
+}
+
+/* 헤더 스타일 */
+.google-calendar-style .fc-header-toolbar {
+  padding: 1rem;
+  margin-bottom: 0 !important;
+}
+
+.google-calendar-style .fc-toolbar-title {
+  font-size: 1.25rem !important;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* 버튼 스타일 */
+.google-calendar-style .fc-button {
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  border-radius: 0.375rem !important;
+  box-shadow: none !important;
+  height: auto !important;
+  transition: all 0.2s ease;
+}
+
+.google-calendar-style .fc-button-primary:not(:disabled):active,
+.google-calendar-style .fc-button-primary:not(:disabled).fc-button-active {
+  color: #4285F4 !important;
+  background-color: #ecf3fe !important;
+  border-color: #4285F4 !important;
+}
+
+/* 요일 헤더 스타일 */
+.google-calendar-style .fc-col-header-cell {
+  padding: 0.75rem 0;
+  font-weight: 500;
+  background-color: #f9fafb;
+  color: #4b5563;
+}
+
+.google-calendar-style .fc-col-header-cell-cushion {
+  padding: 0.5rem;
+  color: #4b5563;
+  text-decoration: none !important;
+}
+
+/* 날짜 셀 스타일 */
+.google-calendar-style .fc-daygrid-day {
+  transition: background-color 0.2s ease;
+}
+
+.google-calendar-style .fc-daygrid-day:hover {
+  background-color: #f9fafb;
+}
+
+.google-calendar-style .fc-daygrid-day-top {
+  padding: 0.5rem;
+}
+
+.google-calendar-style .fc-daygrid-day-number {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 0.25rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+  text-decoration: none !important;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.google-calendar-style .fc-day-today .fc-daygrid-day-number {
+  background-color: #4285F4;
+  color: white !important;
+  font-weight: 500;
+}
+
+/* 주말 스타일 */
+.google-calendar-style .fc-day-sun, 
+.google-calendar-style .fc-day-sat {
+  background-color: #f8fafc;
+}
+
+.google-calendar-style .fc-day-sun .fc-daygrid-day-number, 
+.google-calendar-style .fc-day-sat .fc-daygrid-day-number {
+  color: #94a3b8;
+}
+
+/* 현재 시간 표시 스타일 */
+.google-calendar-style .fc-timegrid-now-indicator-arrow,
+.google-calendar-style .fc-timegrid-now-indicator-line {
+  border-color: #ea4335;
+}
+
+/* 이벤트 스타일 */
+.google-calendar-style .fc-event {
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  margin: 1px 0;
+  transition: all 0.1s ease;
+}
+
+.google-calendar-style .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.google-calendar-style .fc-daygrid-event-dot {
+  border-color: currentColor;
+}
+
+.google-calendar-style .fc-list-event:hover {
+  background-color: #f3f4f6;
+}
+
+.google-calendar-style .fc-list-day-cushion {
+  background-color: #f9fafb !important;
+}
+
+.google-calendar-style .fc-list-event-time {
+  width: 120px;
+}
+
+/* 더보기 링크 스타일 */
+.google-calendar-style .fc-daygrid-more-link {
+  color: #4285F4;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  background-color: #ecf3fe;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+/* 모바일 반응형 스타일 */
+@media (max-width: 640px) {
+  .google-calendar-style .fc-header-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .google-calendar-style .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+  
+  .google-calendar-style .fc-button {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .google-calendar-style .fc-col-header-cell-cushion {
+    padding: 0.25rem;
+  }
+  
+  .google-calendar-style .fc-daygrid-day-number {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* 캘린더 이벤트 타입별 색상 */
+.event-type-meeting {
+  background-color: #4285F4 !important;
+  border-color: #4285F4 !important;
+}
+
+.event-type-call {
+  background-color: #0B8043 !important;
+  border-color: #0B8043 !important;
+}
+
+.event-type-email {
+  background-color: #3F51B5 !important;
+  border-color: #3F51B5 !important;
+}
+
+.event-type-task {
+  background-color: #7986CB !important;
+  border-color: #7986CB !important;
+}
+
+.event-type-followup {
+  background-color: #F4511E !important;
+  border-color: #F4511E !important;
+}
+
+.event-type-deadline {
+  background-color: #E67C73 !important;
+  border-color: #E67C73 !important;
+}
+
+/* 공휴일 스타일 */
+.holiday-name {
+  font-size: 0.65rem;
+  display: block;
+  line-height: 1;
+  margin-top: 2px;
+}

@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', // Enable dark mode variant based on class
   theme: {
     extend: {
       colors: {
@@ -31,7 +32,7 @@ export default {
           800: '#1e293b',
           900: '#0f172a',
         }
-      }
+      },
     },
   },
   plugins: [],

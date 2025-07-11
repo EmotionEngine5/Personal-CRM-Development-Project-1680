@@ -30,14 +30,28 @@ function profileReducer(state, action) {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload }
+    
     case 'SET_ERROR':
       return { ...state, error: action.payload, isLoading: false }
+    
     case 'SET_PROFILE':
       return { ...state, profile: action.payload, isLoading: false }
+    
     case 'UPDATE_PROFILE':
-      return { ...state, profile: { ...state.profile, ...action.payload } }
+      return { 
+        ...state, 
+        profile: { ...state.profile, ...action.payload }
+      }
+    
+    case 'UPDATE_PROFILE_IMAGE':
+      return {
+        ...state,
+        profile: { ...state.profile, profileImage: action.payload }
+      }
+    
     case 'CLEAR_ERROR':
       return { ...state, error: null }
+    
     default:
       return state
   }
@@ -70,9 +84,9 @@ export function ProfileProvider({ children }) {
         const savedProfile = localStorage.getItem(`${STORAGE_KEY}-${user.id}`)
         if (savedProfile) {
           const parsedProfile = JSON.parse(savedProfile)
-          dispatch({ 
-            type: 'SET_PROFILE', 
-            payload: { ...userProfile, ...parsedProfile } 
+          dispatch({
+            type: 'SET_PROFILE',
+            payload: { ...userProfile, ...parsedProfile }
           })
         } else {
           dispatch({ type: 'SET_PROFILE', payload: userProfile })
@@ -92,7 +106,7 @@ export function ProfileProvider({ children }) {
     if (user && state.profile.name) {
       try {
         localStorage.setItem(
-          `${STORAGE_KEY}-${user.id}`, 
+          `${STORAGE_KEY}-${user.id}`,
           JSON.stringify(state.profile)
         )
       } catch (error) {
@@ -109,15 +123,60 @@ export function ProfileProvider({ children }) {
   // 프로필 이미지 업데이트
   const updateProfileImage = (imageFile) => {
     if (imageFile) {
+      // 파일 크기 검사 (5MB 제한)
+      if (imageFile.size > 5 * 1024 * 1024) {
+        dispatch({ 
+          type: 'SET_ERROR', 
+          payload: '이미지 파일 크기는 5MB를 초과할 수 없습니다.' 
+        })
+        return
+      }
+
+      // 파일 타입 검사
+      if (!imageFile.type.startsWith('image/')) {
+        dispatch({ 
+          type: 'SET_ERROR', 
+          payload: '이미지 파일만 업로드할 수 있습니다.' 
+        })
+        return
+      }
+
       const reader = new FileReader()
       reader.onload = (e) => {
+        dispatch({
+          type: 'UPDATE_PROFILE_IMAGE',
+          payload: e.target.result
+        })
+      }
+      reader.onerror = () => {
         dispatch({ 
-          type: 'UPDATE_PROFILE', 
-          payload: { profileImage: e.target.result } 
+          type: 'SET_ERROR', 
+          payload: '이미지 로드 중 오류가 발생했습니다.' 
         })
       }
       reader.readAsDataURL(imageFile)
     }
+  }
+
+  // Base64를 Blob으로 변환하는 헬퍼 함수
+  const dataURLtoBlob = (dataURL) => {
+    const arr = dataURL.split(',')
+    const mime = arr[0].match(/:(.*?);/)[1]
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
+    }
+    return new Blob([u8arr], { type: mime })
+  }
+
+  // 프로필 이미지 제거
+  const removeProfileImage = () => {
+    dispatch({
+      type: 'UPDATE_PROFILE_IMAGE',
+      payload: null
+    })
   }
 
   // 프로필 초기화
@@ -128,12 +187,20 @@ export function ProfileProvider({ children }) {
     dispatch({ type: 'SET_PROFILE', payload: initialState.profile })
   }
 
+  // 오류 클리어
+  const clearError = () => {
+    dispatch({ type: 'CLEAR_ERROR' })
+  }
+
   // 컨텍스트 값
   const value = {
     ...state,
     updateProfile,
     updateProfileImage,
-    clearProfile
+    removeProfileImage,
+    clearProfile,
+    clearError,
+    dataURLtoBlob
   }
 
   return (

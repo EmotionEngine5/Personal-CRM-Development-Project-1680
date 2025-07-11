@@ -4,6 +4,7 @@ import ReactECharts from 'echarts-for-react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import { useCRM } from '../context/CRMContext';
+import { formatNumber, formatCurrency } from '../utils/formatters';
 
 const { FiDollarSign, FiTrendingUp, FiUsers, FiTarget } = FiIcons;
 
@@ -21,28 +22,28 @@ function Revenue() {
   const revenueStats = [
     {
       name: '월 총 매출',
-      value: `${Math.round(totalRevenue / 10000)}만원`,
+      value: `${formatNumber(Math.round(totalRevenue / 10000))}만원`,
       change: '+12% 전월 대비',
       icon: FiDollarSign,
       color: 'bg-green-500'
     },
     {
       name: '평균 고객 단가',
-      value: `${Math.round(avgRevenue / 10000)}만원`,
+      value: `${formatNumber(Math.round(avgRevenue / 10000))}만원`,
       change: '고객당 평균',
       icon: FiTarget,
       color: 'bg-blue-500'
     },
     {
       name: '총 사용자 수',
-      value: totalUsers,
+      value: formatNumber(totalUsers),
       change: '전체 고객사',
       icon: FiUsers,
       color: 'bg-purple-500'
     },
     {
       name: 'ARPU',
-      value: `${Math.round(totalRevenue / totalUsers / 10000)}만원`,
+      value: `${formatNumber(Math.round(totalRevenue / (totalUsers || 1) / 10000))}만원`,
       change: '사용자당 평균',
       icon: FiTrendingUp,
       color: 'bg-orange-500'
@@ -53,40 +54,30 @@ function Revenue() {
     title: {
       text: '고객별 월 매출 현황',
       left: 'left',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
+      textStyle: { fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
       trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      },
+      axisPointer: { type: 'shadow' },
       formatter: function(params) {
-        return `${params[0].name}<br/>월 매출: ${params[0].value}만원`;
+        return `${params[0].name}<br/>월 매출: ${formatNumber(params[0].value)}만원`;
       }
     },
     xAxis: {
       type: 'category',
       data: revenueByCustomer.slice(0, 15).map(customer => customer.companyName),
-      axisLabel: {
-        rotate: 45,
-        interval: 0
-      }
+      axisLabel: { rotate: 45, interval: 0 }
     },
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: '{value}만원'
+        formatter: value => `${formatNumber(value)}만원`
       }
     },
     series: [{
       data: revenueByCustomer.slice(0, 15).map(customer => Math.round(customer.monthlyFee / 10000)),
       type: 'bar',
-      itemStyle: {
-        color: '#10b981'
-      }
+      itemStyle: { color: '#10b981' }
     }]
   };
 
@@ -94,13 +85,13 @@ function Revenue() {
     title: {
       text: '사용자 수별 고객 분포',
       left: 'left',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
+      textStyle: { fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
-      trigger: 'item'
+      trigger: 'item',
+      formatter: function(params) {
+        return `${params.name}: ${formatNumber(params.value)}개 (${params.percent}%)`;
+      }
     },
     series: [{
       type: 'pie',
@@ -115,7 +106,7 @@ function Revenue() {
         itemStyle: {
           shadowBlur: 10,
           shadowOffsetX: 0,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+          shadowColor: 'rgba(0,0,0,0.5)'
         }
       }
     }]
@@ -157,7 +148,6 @@ function Revenue() {
         >
           <ReactECharts option={revenueChartOption} style={{ height: '400px' }} />
         </motion.div>
-
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -192,12 +182,14 @@ function Revenue() {
                 <tr key={customer.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4 font-medium text-gray-900">{customer.companyName}</td>
                   <td className="py-3 px-4 text-gray-600">{customer.contactName}</td>
-                  <td className="py-3 px-4 text-right text-gray-600">{customer.users || 0}명</td>
+                  <td className="py-3 px-4 text-right text-gray-600">{formatNumber(customer.users || 0)}명</td>
                   <td className="py-3 px-4 text-right font-medium text-gray-900">
-                    {new Intl.NumberFormat('ko-KR').format(customer.monthlyFee)}원
+                    {formatCurrency(customer.monthlyFee)}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-600">
-                    {customer.users > 0 ? new Intl.NumberFormat('ko-KR').format(Math.round(customer.monthlyFee / customer.users)) : 0}원
+                    {customer.users > 0 ? 
+                      formatCurrency(Math.round(customer.monthlyFee / customer.users)) : 
+                      formatCurrency(0)}
                   </td>
                 </tr>
               ))}

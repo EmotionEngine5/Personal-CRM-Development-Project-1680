@@ -1,43 +1,74 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import { useProfile } from '../context/ProfileContext';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import ProfileModal from './ProfileModal';
+import ThemeToggle from './ThemeToggle';
 
 const {
   FiUser,
   FiSettings,
-  FiHelpCircle,
   FiLogOut,
-  FiMoon,
-  FiSun,
-  FiChevronRight,
-  FiBell,
-  FiKey
+  FiChevronDown,
 } = FiIcons;
 
 function ProfileButton() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const menuRef = useRef(null);
+  const navigate = useNavigate();
   const { profile } = useProfile();
   const { logout } = useAuth();
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const menuRef = useRef(null);
+  const { isDarkMode } = useTheme();
 
-  // 메뉴 외부 클릭 감지
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const menuSections = [
+    {
+      type: 'profile',
+      title: '프로필 관리',
+      items: [
+        {
+          icon: FiUser,
+          label: '내 프로필',
+          onClick: () => {
+            setShowProfileModal(true);
+            setIsOpen(false);
+          },
+          description: '개인정보 및 프로필 설정'
+        },
+        {
+          icon: FiSettings,
+          label: '설정',
+          onClick: () => {
+            navigate('/settings');
+            setIsOpen(false);
+          },
+          description: '시스템 설정 및 보안'
+        }
+      ]
+    },
+    {
+      type: 'account',
+      title: '계정',
+      items: [
+        {
+          icon: FiLogOut,
+          label: '로그아웃',
+          onClick: handleLogout,
+          description: '시스템에서 로그아웃',
+          className: 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900 dark:text-red-400'
+        }
+      ]
+    }
+  ];
 
   const getProfileInitials = () => {
     if (profile.name) {
@@ -46,85 +77,13 @@ function ProfileButton() {
     return 'U';
   };
 
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const confirmLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const menuItems = [
-    {
-      type: 'section',
-      items: [
-        {
-          icon: FiUser,
-          label: '내 프로필',
-          onClick: () => navigate('/settings/profile'),
-          info: profile.email
-        },
-      ]
-    },
-    {
-      type: 'section',
-      items: [
-        {
-          icon: FiBell,
-          label: '알림 설정',
-          onClick: () => navigate('/settings/notifications')
-        },
-        {
-          icon: FiKey,
-          label: '보안 설정',
-          onClick: () => navigate('/settings/security')
-        },
-        {
-          icon: isDarkMode ? FiSun : FiMoon,
-          label: '테마 변경',
-          onClick: () => setIsDarkMode(!isDarkMode),
-          info: isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'
-        }
-      ]
-    },
-    {
-      type: 'section',
-      items: [
-        {
-          icon: FiSettings,
-          label: '환경설정',
-          onClick: () => navigate('/settings')
-        },
-        {
-          icon: FiHelpCircle,
-          label: '도움말',
-          onClick: () => window.open('https://docs.example.com', '_blank')
-        }
-      ]
-    },
-    {
-      type: 'section',
-      items: [
-        {
-          icon: FiLogOut,
-          label: '로그아웃',
-          onClick: handleLogout,
-          danger: true
-        }
-      ]
-    }
-  ];
-
   return (
     <div className="relative" ref={menuRef}>
-      {/* 프로필 버튼 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        aria-label="프로필 메뉴"
+        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
-        <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-500 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
           {profile.profileImage ? (
             <img
               src={profile.profileImage}
@@ -132,135 +91,124 @@ function ProfileButton() {
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-white font-semibold text-sm">
+            <span className="text-primary-600 dark:text-primary-300 font-semibold">
               {getProfileInitials()}
             </span>
           )}
         </div>
+        <SafeIcon
+          icon={FiChevronDown}
+          className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${
+            isOpen ? 'transform rotate-180' : ''
+          }`}
+        />
       </button>
 
-      {/* 드롭다운 메뉴 */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50"
-          >
-            {/* 프로필 헤더 */}
-            <div className="p-4 bg-gray-50 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-primary-500 flex items-center justify-center">
-                  {profile.profileImage ? (
-                    <img
-                      src={profile.profileImage}
-                      alt="프로필"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-white font-semibold text-lg">
-                      {getProfileInitials()}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {profile.name}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {profile.email}
-                  </p>
-                  {profile.position && (
-                    <p className="text-xs text-gray-500 truncate">
-                      {profile.position}
-                    </p>
-                  )}
+          <>
+            <div
+              className="fixed inset-0 z-30"
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg z-40 border border-gray-200 dark:border-gray-700 overflow-hidden"
+            >
+              {/* User Info */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                    {profile.profileImage ? (
+                      <img
+                        src={profile.profileImage}
+                        alt="프로필"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-primary-600 dark:text-primary-300 font-bold text-xl">
+                        {getProfileInitials()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{profile.name || '사용자'}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{profile.email}</p>
+                    {profile.position && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{profile.position}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 메뉴 아이템 */}
-            <div className="py-2">
-              {menuItems.map((section, sectionIndex) => (
-                <div key={sectionIndex}>
-                  {section.items.map((item, itemIndex) => (
-                    <button
-                      key={itemIndex}
-                      onClick={item.onClick}
-                      className={`w-full px-4 py-2 text-left flex items-center justify-between hover:bg-gray-50 transition-colors ${
-                        item.danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <SafeIcon
-                          icon={item.icon}
-                          className={`w-4 h-4 ${
-                            item.danger ? 'text-red-500' : 'text-gray-400'
-                          }`}
-                        />
-                        <span className="text-sm">{item.label}</span>
-                      </div>
-                      {item.info ? (
-                        <span className="text-xs text-gray-400">{item.info}</span>
-                      ) : (
-                        <SafeIcon
-                          icon={FiChevronRight}
-                          className="w-4 h-4 text-gray-400"
-                        />
-                      )}
-                    </button>
-                  ))}
-                  {sectionIndex < menuItems.length - 1 && (
-                    <div className="my-2 border-b border-gray-200" />
-                  )}
+              {/* Menu Sections */}
+              <div className="py-2">
+                {/* 테마 전환 버튼 추가 */}
+                <div className="px-2 mb-2">
+                  <ThemeToggle />
                 </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 로그아웃 확인 모달 */}
-      <AnimatePresence>
-        {showLogoutConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                로그아웃 확인
-              </h3>
-              <p className="text-gray-600 mb-6">
-                정말 로그아웃 하시겠습니까? 로그아웃 후에는 다시 로그인해야 합니다.
-              </p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={confirmLogout}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  로그아웃
-                </button>
+                
+                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                
+                {menuSections.map((section, index) => (
+                  section.items.length > 0 && (
+                    <div key={section.type} className="px-2">
+                      {section.title && (
+                        <h5 className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          {section.title}
+                        </h5>
+                      )}
+                      <div className="space-y-1">
+                        {section.items.map((item, itemIndex) => (
+                          <button
+                            key={itemIndex}
+                            onClick={item.onClick}
+                            className={`w-full px-3 py-2 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-3 ${item.className || ''}`}
+                          >
+                            <SafeIcon 
+                              icon={item.icon} 
+                              className={`w-5 h-5 ${
+                                item.className ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'
+                              }`} 
+                            />
+                            <div className="flex-1">
+                              <span className={`block font-medium ${
+                                item.className 
+                                  ? 'text-red-600 dark:text-red-400' 
+                                  : 'text-gray-900 dark:text-gray-100'
+                              }`}>
+                                {item.label}
+                              </span>
+                              {item.description && (
+                                <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                  {item.description}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      {index < menuSections.length - 1 && (
+                        <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                      )}
+                    </div>
+                  )
+                ))}
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
+
+      {/* ProfileModal */}
+      {showProfileModal && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import { useCRM } from '../context/CRMContext';
 import { format, subDays, eachDayOfInterval, isAfter } from 'date-fns';
+import { formatNumber, formatCurrency, formatPercent } from '../utils/formatters';
 
 const { FiTrendingUp, FiUsers, FiDollarSign, FiTarget, FiPhone, FiMail, FiMessageSquare, FiBriefcase } = FiIcons;
 
@@ -12,20 +13,13 @@ function Analytics() {
   const { customers, interactions } = useCRM();
 
   // 고객 증가 추이 (최근 30일)
-  const last30Days = eachDayOfInterval({
-    start: subDays(new Date(), 29),
-    end: new Date()
-  });
-
+  const last30Days = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() });
   const customerGrowthData = last30Days.map(day => {
     const count = customers.filter(customer =>
-      isAfter(new Date(customer.createdAt), subDays(day, 1)) &&
+      isAfter(new Date(customer.createdAt), subDays(day, 1)) && 
       !isAfter(new Date(customer.createdAt), day)
     ).length;
-    return {
-      date: format(day, 'MM-dd'),
-      count: count
-    };
+    return { date: format(day, 'MM-dd'), count: count };
   });
 
   // 태그별 고객 분포
@@ -39,41 +33,60 @@ function Analytics() {
   }, {});
 
   // 매출 분석
-  const revenueData = customers.map(customer => ({
-    name: customer.companyName,
-    value: customer.monthlyFee || 0,
-    users: customer.users || 0
-  })).sort((a, b) => b.value - a.value);
+  const revenueData = customers
+    .map(customer => ({
+      name: customer.companyName,
+      value: customer.monthlyFee || 0,
+      users: customer.users || 0
+    }))
+    .sort((a, b) => b.value - a.value);
 
   // 최근 통계
-  const recentCustomers = customers.filter(customer =>
+  const recentCustomers = customers.filter(customer => 
     isAfter(new Date(customer.createdAt), subDays(new Date(), 7))
   ).length;
-
+  
   const totalRevenue = customers.reduce((sum, customer) => sum + (customer.monthlyFee || 0), 0);
   const avgRevenue = customers.length > 0 ? totalRevenue / customers.length : 0;
+  
+  // '계약완료' 상태인 고객만 필터링
+  const contractCompletedCustomers = customers.filter(customer => 
+    customer.tags && customer.tags.includes('계약완료')
+  );
+  
+  // '계약완료' 상태인 고객들의 총 사용자 수
+  const totalContractCompletedUsers = contractCompletedCustomers.reduce(
+    (sum, customer) => sum + (customer.users || 0), 
+    0
+  );
+  
+  // '계약완료' 상태인 고객들의 평균 사용자 수 (소수점 한 자리까지)
+  const avgContractCompletedUsers = contractCompletedCustomers.length > 0 
+    ? (totalContractCompletedUsers / contractCompletedCustomers.length).toFixed(1) 
+    : 0;
 
   const customerGrowthOption = {
     title: {
       text: '고객 증가 추이 (최근 30일)',
       left: 'left',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
+      textStyle: { fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
-      trigger: 'axis'
+      trigger: 'axis',
+      formatter: function(params) {
+        return `${params[0].name}: ${formatNumber(params[0].value)}개`;
+      }
     },
     xAxis: {
       type: 'category',
       data: customerGrowthData.map(item => item.date),
-      axisLabel: {
-        rotate: 45
-      }
+      axisLabel: { rotate: 45 }
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
+      axisLabel: {
+        formatter: (value) => formatNumber(value)
+      }
     },
     series: [{
       data: customerGrowthData.map(item => item.count),
@@ -82,25 +95,15 @@ function Analytics() {
       areaStyle: {
         color: {
           type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [{
-            offset: 0,
-            color: 'rgba(14, 165, 233, 0.3)'
-          }, {
-            offset: 1,
-            color: 'rgba(14, 165, 233, 0.1)'
-          }]
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(14,165,233,0.3)' },
+            { offset: 1, color: 'rgba(14,165,233,0.1)' }
+          ]
         }
       },
-      lineStyle: {
-        color: '#0ea5e9'
-      },
-      itemStyle: {
-        color: '#0ea5e9'
-      }
+      lineStyle: { color: '#0ea5e9' },
+      itemStyle: { color: '#0ea5e9' }
     }]
   };
 
@@ -108,13 +111,13 @@ function Analytics() {
     title: {
       text: '고객 태그 분포',
       left: 'left',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
+      textStyle: { fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
-      trigger: 'item'
+      trigger: 'item',
+      formatter: function(params) {
+        return `${params.name}: ${formatNumber(params.value)}개 (${params.percent}%)`;
+      }
     },
     series: [{
       type: 'pie',
@@ -127,7 +130,7 @@ function Analytics() {
         itemStyle: {
           shadowBlur: 10,
           shadowOffsetX: 0,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+          shadowColor: 'rgba(0,0,0,0.5)'
         }
       }
     }]
@@ -137,64 +140,60 @@ function Analytics() {
     title: {
       text: '고객별 월 매출 현황',
       left: 'left',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
+      textStyle: { fontSize: 16, fontWeight: 'bold' }
     },
     tooltip: {
       trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
+      axisPointer: { type: 'shadow' },
+      formatter: function(params) {
+        return `${params[0].name}: ${formatCurrency(params[0].value * 10000)}`;
       }
     },
     xAxis: {
       type: 'category',
       data: revenueData.slice(0, 10).map(item => item.name),
-      axisLabel: {
-        rotate: 45
-      }
+      axisLabel: { rotate: 45 }
     },
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: '{value}만원'
+        formatter: (value) => `${formatNumber(value)}만원`
       }
     },
     series: [{
       data: revenueData.slice(0, 10).map(item => Math.round(item.value / 10000)),
       type: 'bar',
-      itemStyle: {
-        color: '#10b981'
-      }
+      itemStyle: { color: '#10b981' }
     }]
   };
 
   const stats = [
     {
       name: '총 고객 수',
-      value: customers.length,
-      change: `+${recentCustomers} 이번 주`,
+      value: formatNumber(customers.length),
+      change: `+${formatNumber(recentCustomers)} 이번 주`,
       icon: FiUsers,
       color: 'bg-blue-500'
     },
     {
       name: '월 총 매출',
-      value: `${Math.round(totalRevenue / 10000)}만원`,
-      change: `평균 ${Math.round(avgRevenue / 10000)}만원`,
+      value: `${formatNumber(Math.round(totalRevenue / 10000))}만원`,
+      change: `평균 ${formatNumber(Math.round(avgRevenue / 10000))}만원`,
       icon: FiDollarSign,
       color: 'bg-green-500'
     },
     {
       name: '평균 사용자 수',
-      value: customers.length > 0 ? Math.round(customers.reduce((sum, c) => sum + (c.users || 0), 0) / customers.length) : 0,
-      change: '고객당 평균',
+      value: formatNumber(avgContractCompletedUsers),
+      change: '계약완료 고객 기준',
       icon: FiTarget,
       color: 'bg-purple-500'
     },
     {
       name: '전환율',
-      value: `${Math.round((customers.filter(c => c.tags?.includes('계약완료')).length / customers.length) * 100) || 0}%`,
+      value: formatPercent(
+        Math.round((customers.filter(c => c.tags?.includes('계약완료')).length / (customers.length || 1)) * 100)
+      ),
       change: '계약완료 고객 비율',
       icon: FiTrendingUp,
       color: 'bg-orange-500'
@@ -237,7 +236,6 @@ function Analytics() {
         >
           <ReactECharts option={customerGrowthOption} style={{ height: '300px' }} />
         </motion.div>
-
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -272,7 +270,7 @@ function Analytics() {
               <SafeIcon icon={FiUsers} className="w-6 h-6 text-blue-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {customers.filter(c => c.tags?.includes('신규고객')).length}
+              {formatNumber(customers.filter(c => c.tags?.includes('신규고객')).length)}
             </p>
             <p className="text-sm text-gray-500">신규 고객</p>
           </div>
@@ -281,7 +279,7 @@ function Analytics() {
               <SafeIcon icon={FiTarget} className="w-6 h-6 text-green-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {customers.filter(c => c.tags?.includes('협의중')).length}
+              {formatNumber(customers.filter(c => c.tags?.includes('협의중')).length)}
             </p>
             <p className="text-sm text-gray-500">협의중</p>
           </div>
@@ -290,9 +288,28 @@ function Analytics() {
               <SafeIcon icon={FiDollarSign} className="w-6 h-6 text-purple-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {customers.filter(c => c.tags?.includes('계약완료')).length}
+              {formatNumber(contractCompletedCustomers.length)}
             </p>
             <p className="text-sm text-gray-500">계약완료</p>
+          </div>
+        </div>
+        
+        {/* 추가된 계약완료 고객 상세 정보 섹션 */}
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h4 className="font-medium text-gray-800 mb-2">계약완료 고객 상세</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-500">계약완료 고객 수</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(contractCompletedCustomers.length)}명</p>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-500">총 사용자 수</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(totalContractCompletedUsers)}명</p>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-500">평균 사용자 수</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(avgContractCompletedUsers)}명</p>
+            </div>
           </div>
         </div>
       </motion.div>

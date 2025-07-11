@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import { useCRM } from '../context/CRMContext';
+import { formatNumber } from '../utils/formatters';
 
 const { FiX, FiUser, FiMail, FiPhone, FiBriefcase, FiMapPin, FiTag, FiDollarSign, FiCalendar, FiFileText, FiPaperclip } = FiIcons;
 
@@ -33,10 +34,7 @@ function CustomerForm({ customer, onClose }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleTagToggle = (tag) => {
@@ -54,6 +52,22 @@ function CustomerForm({ customer, onClose }) {
       ...prev,
       attachments: [...prev.attachments, ...files.map(file => ({ name: file.name, size: file.size }))]
     }));
+  };
+  
+  // 사용자가 금액 입력할 때 쉼표 포맷팅
+  const formatInputValue = (value) => {
+    if (!value) return '';
+    // 입력 중인 값에서 쉼표 제거
+    return value.toString().replace(/,/g, '');
+  };
+
+  // 사용자가 보는 금액 표시
+  const displayFormattedValue = (value) => {
+    if (!value) return '';
+    // 입력 중인 값에서 쉼표 제거 후 숫자만 남김
+    const numericValue = value.toString().replace(/[^\d]/g, '');
+    // 천 단위 쉼표 포맷팅
+    return formatNumber(numericValue);
   };
 
   return (
@@ -80,8 +94,7 @@ function CustomerForm({ customer, onClose }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <SafeIcon icon={FiBriefcase} className="w-4 h-4 inline mr-2" />
-                  고객사명 *
+                  <SafeIcon icon={FiBriefcase} className="w-4 h-4 inline mr-2" /> 고객사명 *
                 </label>
                 <input
                   type="text"
@@ -92,11 +105,9 @@ function CustomerForm({ customer, onClose }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <SafeIcon icon={FiUser} className="w-4 h-4 inline mr-2" />
-                  담당자명 *
+                  <SafeIcon icon={FiUser} className="w-4 h-4 inline mr-2" /> 담당자명 *
                 </label>
                 <input
                   type="text"
@@ -107,11 +118,9 @@ function CustomerForm({ customer, onClose }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <SafeIcon icon={FiPhone} className="w-4 h-4 inline mr-2" />
-                  연락처
+                  <SafeIcon icon={FiPhone} className="w-4 h-4 inline mr-2" /> 연락처
                 </label>
                 <input
                   type="tel"
@@ -121,11 +130,9 @@ function CustomerForm({ customer, onClose }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <SafeIcon icon={FiMail} className="w-4 h-4 inline mr-2" />
-                  이메일 *
+                  <SafeIcon icon={FiMail} className="w-4 h-4 inline mr-2" /> 이메일 *
                 </label>
                 <input
                   type="email"
@@ -136,31 +143,37 @@ function CustomerForm({ customer, onClose }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <SafeIcon icon={FiUser} className="w-4 h-4 inline mr-2" />
-                  사용자 수
+                  <SafeIcon icon={FiUser} className="w-4 h-4 inline mr-2" /> 사용자 수
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   name="users"
-                  value={formData.users}
-                  onChange={handleChange}
+                  value={displayFormattedValue(formData.users)}
+                  onChange={(e) => {
+                    // 숫자와 쉼표만 허용
+                    const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                    // 쉼표 제거한 순수 숫자 값을 저장
+                    setFormData(prev => ({ ...prev, users: rawValue.replace(/,/g, '') }));
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <SafeIcon icon={FiDollarSign} className="w-4 h-4 inline mr-2" />
-                  월 요금 (원)
+                  <SafeIcon icon={FiDollarSign} className="w-4 h-4 inline mr-2" /> 월 요금 (원)
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   name="monthlyFee"
-                  value={formData.monthlyFee}
-                  onChange={handleChange}
+                  value={displayFormattedValue(formData.monthlyFee)}
+                  onChange={(e) => {
+                    // 숫자와 쉼표만 허용
+                    const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                    // 쉼표 제거한 순수 숫자 값을 저장
+                    setFormData(prev => ({ ...prev, monthlyFee: rawValue.replace(/,/g, '') }));
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -168,8 +181,7 @@ function CustomerForm({ customer, onClose }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <SafeIcon icon={FiCalendar} className="w-4 h-4 inline mr-2" />
-                협의/약속 일정
+                <SafeIcon icon={FiCalendar} className="w-4 h-4 inline mr-2" /> 협의/약속 일정
               </label>
               <input
                 type="datetime-local"
@@ -182,8 +194,7 @@ function CustomerForm({ customer, onClose }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <SafeIcon icon={FiTag} className="w-4 h-4 inline mr-2" />
-                태그
+                <SafeIcon icon={FiTag} className="w-4 h-4 inline mr-2" /> 태그
               </label>
               <div className="flex flex-wrap gap-2">
                 {tags.map(tag => (
@@ -205,8 +216,7 @@ function CustomerForm({ customer, onClose }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <SafeIcon icon={FiFileText} className="w-4 h-4 inline mr-2" />
-                노트
+                <SafeIcon icon={FiFileText} className="w-4 h-4 inline mr-2" /> 노트
               </label>
               <textarea
                 name="notes"
@@ -220,8 +230,7 @@ function CustomerForm({ customer, onClose }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <SafeIcon icon={FiPaperclip} className="w-4 h-4 inline mr-2" />
-                파일 첨부
+                <SafeIcon icon={FiPaperclip} className="w-4 h-4 inline mr-2" /> 파일 첨부
               </label>
               <input
                 type="file"
@@ -235,6 +244,7 @@ function CustomerForm({ customer, onClose }) {
                     <div key={index} className="text-sm text-gray-600 flex items-center">
                       <SafeIcon icon={FiPaperclip} className="w-3 h-3 mr-2" />
                       {file.name}
+                      {file.size && <span className="ml-1 text-xs text-gray-500">({formatNumber(Math.round(file.size / 1024))} KB)</span>}
                     </div>
                   ))}
                 </div>

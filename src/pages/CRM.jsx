@@ -8,6 +8,7 @@ import { useCalendar } from '../context/CalendarContext';
 import CustomerForm from '../components/CustomerForm';
 import CalendarEvents from '../components/CalendarEvents';
 import { format } from 'date-fns';
+import { formatNumber, formatCurrency } from '../utils/formatters';
 
 const { FiPlus, FiSearch, FiFilter, FiEdit, FiTrash2, FiMail, FiPhone, FiUsers, FiDollarSign, FiCalendar, FiBriefcase, FiChevronDown, FiChevronUp } = FiIcons;
 
@@ -21,9 +22,8 @@ function CRM() {
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
 
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = 
-      customer.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      customer.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = customer.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTag = !filterTag || customer.tags?.includes(filterTag);
     return matchesSearch && matchesTag;
@@ -53,13 +53,6 @@ function CRM() {
   };
 
   const allTags = [...new Set(customers.flatMap(customer => customer.tags || []))];
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW'
-    }).format(amount || 0);
-  };
 
   return (
     <div className="space-y-6">
@@ -142,6 +135,7 @@ function CRM() {
                     </button>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -159,7 +153,7 @@ function CRM() {
                     {customer.users && (
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <SafeIcon icon={FiUsers} className="w-4 h-4" />
-                        <span>{customer.users}명</span>
+                        <span>{formatNumber(customer.users)}명</span>
                       </div>
                     )}
                     {customer.monthlyFee && (
@@ -176,23 +170,23 @@ function CRM() {
                     )}
                   </div>
                 </div>
+
                 {customer.tags && customer.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">
                     {customer.tags.map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                      >
+                      <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
                         {tag}
                       </span>
                     ))}
                   </div>
                 )}
+
                 {customer.notes && (
                   <div className="mb-4">
                     <p className="text-sm text-gray-600 line-clamp-2">{customer.notes}</p>
                   </div>
                 )}
+
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <span>등록일: {format(new Date(customer.createdAt), 'yyyy-MM-dd')}</span>
                   <button
